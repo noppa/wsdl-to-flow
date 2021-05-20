@@ -4,12 +4,8 @@
 import { rename, writeFile } from "fs";
 import minimist, { ParsedArgs } from "minimist";
 import mkdirp from "mkdirp";
-import {
-  IInterfaceOptions,
-  mergeTypedWsdl,
-  outputTypedWsdl,
-  wsdl2ts
-} from "./wsdl-to-ts";
+import { mergeTypedWsdl, outputTypedWsdl, wsdl2flow } from "./wsdl-to-flow";
+import { createClientAsync } from "soap";
 
 interface IConfigObject {
   outdir: string;
@@ -18,7 +14,6 @@ interface IConfigObject {
   tslintEnable: null | string[];
 }
 
-const opts: IInterfaceOptions = {};
 const config: IConfigObject = {
   outdir: "./wsdl",
   files: [],
@@ -57,7 +52,7 @@ function mkdirpp(dir: string, mode?: number): Promise<string> {
   return mkdirp(dir, mode || 0o755);
 }
 
-Promise.all(config.files.map((a) => wsdl2ts(a, opts)))
+Promise.all(config.files.map((a) => wsdl2flow(() => createClientAsync(a, {}))))
   .then(([xs1, ...restXs]) => mergeTypedWsdl(xs1, ...restXs))
   .then(outputTypedWsdl)
   .then((xs: { file: string; data: string[] }[]) => {

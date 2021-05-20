@@ -11,10 +11,6 @@ interface IInterfaceObject {
   [key: string]: string | IInterfaceObject;
 }
 
-export interface IInterfaceOptions {
-  quoteProperties?: boolean;
-}
-
 export interface ITypedWsdl {
   client: soap.Client | null;
   files: ITwoDown<string>;
@@ -175,19 +171,12 @@ function wsdlTypeToInterfaceObj(
   return r;
 }
 
-function wsdlTypeToInterfaceString(
-  d: { [k: string]: any },
-  opts: IInterfaceOptions = {}
-): string {
+function wsdlTypeToInterfaceString(d: { [k: string]: any }): string {
   const r: string[] = [];
   for (const k of Object.keys(d)) {
     const v: unknown = d[k];
     let p: string = k;
-    if (
-      opts.quoteProperties ||
-      (opts.quoteProperties === undefined &&
-        !/^[A-Za-z][A-Za-z0-9_-]*$/.test(k))
-    ) {
+    if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(k)) {
       p = JSON.stringify(k);
     }
     if (typeof v === "string") {
@@ -221,7 +210,7 @@ function wsdlTypeToInterfaceString(
       r.push(
         p +
           ": " +
-          wsdlTypeToInterfaceString(d[k], opts).replace(/\n/g, "\n    ") +
+          wsdlTypeToInterfaceString(d[k]).replace(/\n/g, "\n    ") +
           ";"
       );
     }
@@ -234,20 +223,15 @@ function wsdlTypeToInterfaceString(
 
 function wsdlTypeToInterface(
   obj: { [k: string]: any },
-  typeCollector?: TypeCollector,
-  opts?: IInterfaceOptions
+  typeCollector?: TypeCollector
 ): string {
-  return wsdlTypeToInterfaceString(
-    wsdlTypeToInterfaceObj(obj, typeCollector),
-    opts
-  );
+  return wsdlTypeToInterfaceString(wsdlTypeToInterfaceObj(obj, typeCollector));
 }
 
-export async function wsdl2ts(
-  wsdlUri: string,
-  opts?: IInterfaceOptions
+export async function wsdl2flow(
+  getSoapClient: () => Promise<soap.Client>
 ): Promise<ITypedWsdl> {
-  const client = await soap.createClientAsync(wsdlUri, {});
+  const client = await getSoapClient();
   const r: ITypedWsdl = {
     client,
     files: {},
@@ -277,16 +261,8 @@ export async function wsdl2ts(
       for (let maxi = 0; maxi < 32; maxi++) {
         for (const method of Object.keys(d[service][port])) {
           // console.log("---- %s", method);
-          wsdlTypeToInterface(
-            d[service][port][method].input || {},
-            collector,
-            opts
-          );
-          wsdlTypeToInterface(
-            d[service][port][method].output || {},
-            collector,
-            opts
-          );
+          wsdlTypeToInterface(d[service][port][method].input || {}, collector);
+          wsdlTypeToInterface(d[service][port][method].output || {}, collector);
         }
 
         const reg = cloneObj(collector.registered);
@@ -327,13 +303,11 @@ export async function wsdl2ts(
       for (const method of Object.keys(d[service][port])) {
         r.types[service][port]["I" + method + "Input"] = wsdlTypeToInterface(
           d[service][port][method].input || {},
-          collector,
-          opts
+          collector
         );
         r.types[service][port]["I" + method + "Output"] = wsdlTypeToInterface(
           d[service][port][method].output || {},
-          collector,
-          opts
+          collector
         );
         r.methods[service][port][method] =
           "(input: I" +
