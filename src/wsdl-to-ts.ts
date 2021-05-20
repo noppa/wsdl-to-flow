@@ -243,124 +243,115 @@ function wsdlTypeToInterface(
   );
 }
 
-export function wsdl2ts(
+export async function wsdl2ts(
   wsdlUri: string,
   opts?: IInterfaceOptions
 ): Promise<ITypedWsdl> {
-  return new Promise<soap.Client>((resolve, reject) => {
-    soap.createClient(wsdlUri, {}, (err, client) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(client);
+  const client = await soap.createClientAsync(wsdlUri, {});
+  const r: ITypedWsdl = {
+    client,
+    files: {},
+    methods: {},
+    namespaces: {},
+    types: {}
+  };
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const d: IClientDescription = client.describe();
+  for (const service of Object.keys(d)) {
+    for (const port of Object.keys(d[service])) {
+      const collector = new TypeCollector(port + "Types");
+      // console.log("-- %s.%s", service, port);
+      if (!r.types[service]) {
+        r.types[service] = {};
+        r.methods[service] = {};
+        r.files[service] = {};
+        r.namespaces[service] = {};
       }
-    });
-  }).then((client) => {
-    const r: ITypedWsdl = {
-      client,
-      files: {},
-      methods: {},
-      namespaces: {},
-      types: {}
-    };
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const d: IClientDescription = client.describe();
+      if (!r.types[service][port]) {
+        r.types[service][port] = {};
+        r.methods[service][port] = {};
+        r.files[service][port] = service + "/" + port;
+        r.namespaces[service][port] = {};
+      }
 
-    for (const service of Object.keys(d)) {
-      for (const port of Object.keys(d[service])) {
-        const collector = new TypeCollector(port + "Types");
-        // console.log("-- %s.%s", service, port);
-
-        if (!r.types[service]) {
-          r.types[service] = {};
-          r.methods[service] = {};
-          r.files[service] = {};
-          r.namespaces[service] = {};
-        }
-        if (!r.types[service][port]) {
-          r.types[service][port] = {};
-          r.methods[service][port] = {};
-          r.files[service][port] = service + "/" + port;
-          r.namespaces[service][port] = {};
-        }
-
-        for (let maxi = 0; maxi < 32; maxi++) {
-          for (const method of Object.keys(d[service][port])) {
-            // console.log("---- %s", method);
-
-            wsdlTypeToInterface(
-              d[service][port][method].input || {},
-              collector,
-              opts
-            );
-            wsdlTypeToInterface(
-              d[service][port][method].output || {},
-              collector,
-              opts
-            );
-          }
-
-          const reg = cloneObj(collector.registered);
-          collector.registerCollected();
-          const regKeys0: string[] = Object.keys(collector.registered);
-          const regKeys1: string[] = Object.keys(reg);
-          if (regKeys0.length === regKeys1.length) {
-            let noChange = true;
-            for (const rk of regKeys0) {
-              if (collector.registered[rk] !== reg[rk]) {
-                noChange = false;
-                break;
-              }
-            }
-            if (noChange) {
-              break;
-            }
-          }
-          if (maxi === 31) {
-            console.warn("wsdl-to-ts: Aborted nested interface changes");
-          }
-        }
-
-        const collectedKeys: string[] = Object.keys(collector.registered);
-        if (collectedKeys.length) {
-          const ns: { [k: string]: string } = (r.namespaces[service][port][
-            collector.ns
-          ] = {});
-          for (const k of collectedKeys) {
-            ns[k] = "export interface I" + k + " " + collector.registered[k];
-          }
-        }
-
+      for (let maxi = 0; maxi < 32; maxi++) {
         for (const method of Object.keys(d[service][port])) {
-          r.types[service][port]["I" + method + "Input"] = wsdlTypeToInterface(
+          // console.log("---- %s", method);
+          wsdlTypeToInterface(
             d[service][port][method].input || {},
             collector,
             opts
           );
-          r.types[service][port]["I" + method + "Output"] = wsdlTypeToInterface(
+          wsdlTypeToInterface(
             d[service][port][method].output || {},
             collector,
             opts
           );
-          r.methods[service][port][method] =
-            "(input: I" +
-            method +
-            "Input, " +
-            "cb: (err: any | null," +
-            " result: I" +
-            method +
-            "Output," +
-            " raw: string, " +
-            " soapHeader: {[k: string]: any; }) => any, " +
-            "options?: any, " +
-            "extraHeaders?: any" +
-            ") => void";
+        }
+
+        const reg = cloneObj(collector.registered);
+        collector.registerCollected();
+        const regKeys0: string[] = Object.keys(collector.registered);
+        const regKeys1: string[] = Object.keys(reg);
+        if (regKeys0.length === regKeys1.length) {
+          let noChange = true;
+          for (const rk of regKeys0) {
+            if (collector.registered[rk] !== reg[rk]) {
+              noChange = false;
+              break;
+            }
+          }
+          if (noChange) {
+            break;
+          }
+        }
+        if (maxi === 31) {
+          console.warn("wsdl-to-ts: Aborted nested interface changes");
         }
       }
-    }
 
-    return r;
-  });
+      const collectedKeys: string[] = Object.keys(collector.registered);
+      if (collectedKeys.length) {
+        const ns: { [k: string]: string } = (r.namespaces[service][port][
+          collector.ns
+        ] = {});
+        for (const collectedKey of collectedKeys) {
+          ns[collectedKey] =
+            "export interface I" +
+            collectedKey +
+            " " +
+            collector.registered[collectedKey];
+        }
+      }
+
+      for (const method of Object.keys(d[service][port])) {
+        r.types[service][port]["I" + method + "Input"] = wsdlTypeToInterface(
+          d[service][port][method].input || {},
+          collector,
+          opts
+        );
+        r.types[service][port]["I" + method + "Output"] = wsdlTypeToInterface(
+          d[service][port][method].output || {},
+          collector,
+          opts
+        );
+        r.methods[service][port][method] =
+          "(input: I" +
+          method +
+          "Input, " +
+          "cb: (err: any | null," +
+          " result: I" +
+          method +
+          "Output," +
+          " raw: string, " +
+          " soapHeader: {[k: string]: any; }) => any, " +
+          "options?: any, " +
+          "extraHeaders?: any" +
+          ") => void";
+      }
+    }
+  }
+  return r;
 }
 
 function cloneObj<T extends { [k: string]: any }>(a: T): T {
