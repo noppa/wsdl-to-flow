@@ -3,6 +3,7 @@
         "target": "ES6",
         "module": "CommonJS",
         "moduleResolution": "node",
+        "esModuleInterop": true,
         "sourceMap": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
@@ -19,5 +20,10 @@
         "node_modules",
         "lib",
         "esm"
+    ],
+    "include": [
+      ".eslintrc.js",
+      "**/src/**/*.ts",
+      "**/test/**/*.ts"
     ]
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 module.exports = {
   "env": {
     "es6": true,
@@ -16,7 +17,6 @@ module.exports = {
   },
   "plugins": [
     "eslint-plugin-jsdoc",
-    "eslint-plugin-prefer-arrow",
     "@typescript-eslint"
   ],
   "rules": {
