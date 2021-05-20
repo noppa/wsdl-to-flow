@@ -2,7 +2,8 @@
 module.exports = {
   "env": {
     "es6": true,
-    "node": true
+    "node": true,
+    "jest/globals": true
   },
   "extends": [
     "eslint:recommended",
@@ -17,7 +18,8 @@ module.exports = {
   },
   "plugins": [
     "eslint-plugin-jsdoc",
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "eslint-plugin-jest"
   ],
   "rules": {
     "@typescript-eslint/adjacent-overload-signatures": "warn",

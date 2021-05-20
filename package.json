@@ -6,8 +6,8 @@
   "module": "esm/wsdl-to-ts.js",
   "types": "esm/wsdl-to-ts.d.ts",
   "scripts": {
-    "test": "node test/index.js",
-    "build": "npx tsc -p tsconfig.json --skipLibCheck && npx tsc -p tsconfig.json --skipLibCheck -d --outDir esm --module es2015 --target es2016",
+    "test": "jest",
+    "build": "tsc -p tsconfig.json --skipLibCheck && tsc -p tsconfig.json --skipLibCheck -d --outDir esm --module es2015 --target es2016",
     "ci": "npm run build && npm test"
   },
   "bin": {
@@ -25,16 +25,23 @@
   },
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.14.3",
+    "@babel/preset-env": "^7.14.2",
+    "@babel/preset-typescript": "^7.13.0",
     "@types/bluebird": "^3.5.35",
+    "@types/jest": "^26.0.23",
     "@types/minimist": "^1.2.1",
     "@types/mkdirp": "^1.0.1",
     "@types/node": "^15.3.1",
     "@typescript-eslint/eslint-plugin": "^4.24.0",
     "@typescript-eslint/parser": "^4.24.0",
+    "babel-jest": "^26.6.3",
     "eslint": "^7.26.0",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-jest": "^24.3.6",
     "eslint-plugin-jsdoc": "^34.8.2",
     "eslint-plugin-prettier": "^3.4.0",
+    "jest": "^26.6.3",
     "typescript": "^4.2.4"
   },
   "dependencies": {
