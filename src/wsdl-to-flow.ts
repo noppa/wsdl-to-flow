@@ -1,3 +1,4 @@
+import { format } from "prettier";
 import * as soap from "soap";
 import { hasOwnProperty } from "./utils";
 
@@ -445,6 +446,11 @@ export function outputTypedWsdl(
           }
         }
       }
+      d.data = d.data.map((_) =>
+        format(_, {
+          parser: "babel-flow"
+        })
+      );
       r.push(d);
     }
   }

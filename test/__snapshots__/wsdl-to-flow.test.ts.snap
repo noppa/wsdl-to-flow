@@ -1,0 +1,99 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`wsdl2flow should create Flow definitions 1`] = `
+"// File: TempConvert/TempConvertSoap
+
+export interface IFahrenheitToCelsiusInput {
+  /** s:string(undefined) */
+  Fahrenheit: undefined;
+}
+
+export interface IFahrenheitToCelsiusOutput {
+  /** s:string(undefined) */
+  FahrenheitToCelsiusResult: undefined;
+}
+
+export interface ICelsiusToFahrenheitInput {
+  /** s:string(undefined) */
+  Celsius: undefined;
+}
+
+export interface ICelsiusToFahrenheitOutput {
+  /** s:string(undefined) */
+  CelsiusToFahrenheitResult: undefined;
+}
+
+export interface ITempConvertSoapSoap {
+  FahrenheitToCelsius: (
+    input: IFahrenheitToCelsiusInput,
+    cb: (
+      err: any | null,
+      result: IFahrenheitToCelsiusOutput,
+      raw: string,
+      soapHeader: { [k: string]: any }
+    ) => any,
+    options?: any,
+    extraHeaders?: any
+  ) => void;
+  CelsiusToFahrenheit: (
+    input: ICelsiusToFahrenheitInput,
+    cb: (
+      err: any | null,
+      result: ICelsiusToFahrenheitOutput,
+      raw: string,
+      soapHeader: { [k: string]: any }
+    ) => any,
+    options?: any,
+    extraHeaders?: any
+  ) => void;
+}
+
+
+// File: TempConvert/TempConvertSoap12
+
+export interface IFahrenheitToCelsiusInput {
+  /** s:string(undefined) */
+  Fahrenheit: undefined;
+}
+
+export interface IFahrenheitToCelsiusOutput {
+  /** s:string(undefined) */
+  FahrenheitToCelsiusResult: undefined;
+}
+
+export interface ICelsiusToFahrenheitInput {
+  /** s:string(undefined) */
+  Celsius: undefined;
+}
+
+export interface ICelsiusToFahrenheitOutput {
+  /** s:string(undefined) */
+  CelsiusToFahrenheitResult: undefined;
+}
+
+export interface ITempConvertSoap12Soap {
+  FahrenheitToCelsius: (
+    input: IFahrenheitToCelsiusInput,
+    cb: (
+      err: any | null,
+      result: IFahrenheitToCelsiusOutput,
+      raw: string,
+      soapHeader: { [k: string]: any }
+    ) => any,
+    options?: any,
+    extraHeaders?: any
+  ) => void;
+  CelsiusToFahrenheit: (
+    input: ICelsiusToFahrenheitInput,
+    cb: (
+      err: any | null,
+      result: ICelsiusToFahrenheitOutput,
+      raw: string,
+      soapHeader: { [k: string]: any }
+    ) => any,
+    options?: any,
+    extraHeaders?: any
+  ) => void;
+}
+"
+`;

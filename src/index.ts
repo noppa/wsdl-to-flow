@@ -10,15 +10,11 @@ import { createClientAsync } from "soap";
 interface IConfigObject {
   outdir: string;
   files: string[];
-  tslintDisable: null | string[];
-  tslintEnable: null | string[];
 }
 
 const config: IConfigObject = {
   outdir: "./wsdl",
-  files: [],
-  tslintDisable: ["max-line-length", "no-empty-interface"],
-  tslintEnable: []
+  files: []
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -66,21 +62,6 @@ Promise.all(config.files.map((a) => wsdl2flow(() => createClientAsync(a, {}))))
           return new Promise((resolve, reject) => {
             const tsfile = file + ".ts.tmp";
             const fileData: string[] = [];
-            if (config.tslintEnable === null) {
-              fileData.push("/* tslint:enable */");
-            }
-            if (config.tslintDisable === null) {
-              fileData.push("/* tslint:disable */");
-            } else if (config.tslintDisable.length !== 0) {
-              fileData.push(
-                "/* tslint:disable:" + config.tslintDisable.join(" ") + " */"
-              );
-            }
-            if (config.tslintEnable && config.tslintEnable.length !== 0) {
-              fileData.push(
-                "/* tslint:enable:" + config.tslintEnable.join(" ") + " */"
-              );
-            }
             fileData.push(x.data.join("\n\n"));
             fileData.push("");
             writeFile(tsfile, fileData.join("\n"), (err) => {

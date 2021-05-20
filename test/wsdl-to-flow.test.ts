@@ -36,7 +36,11 @@ const requestCacheFile = pathJoin(
 })();
 
 import * as soap from "soap";
-import { wsdl2flow } from "../src/wsdl-to-flow";
+import {
+  mergeTypedWsdl,
+  outputTypedWsdl,
+  wsdl2flow
+} from "../src/wsdl-to-flow";
 
 describe("wsdl2flow", () => {
   let client: soap.Client;
@@ -45,8 +49,16 @@ describe("wsdl2flow", () => {
   });
 
   it("should create Flow definitions", async () => {
-    const result = await wsdl2flow(() => Promise.resolve(client));
-    console.log(result);
+    const result = await wsdl2flow(() => Promise.resolve(client))
+      .then(mergeTypedWsdl)
+      .then(outputTypedWsdl);
+
+    const resultFiles = result
+      .map(({ file, data }) => {
+        return ["// File: " + file, "", ...data].join("\n");
+      })
+      .join("\n\n");
+    expect(resultFiles).toMatchSnapshot();
   });
 
   afterAll(() => {
