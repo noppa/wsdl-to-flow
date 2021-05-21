@@ -2,9 +2,9 @@
   "name": "wsdl-to-ts",
   "version": "0.2.3",
   "description": "Build TypeScript typings for SOAP WSDL",
-  "main": "lib/wsdl-to-ts.js",
-  "module": "esm/wsdl-to-ts.js",
-  "types": "esm/wsdl-to-ts.d.ts",
+  "main": "lib/wsdl-to-flow.js",
+  "module": "esm/wsdl-to-flow.js",
+  "types": "esm/wsdl-to-flow.d.ts",
   "scripts": {
     "test": "jest",
     "build": "tsc -p tsconfig.json --skipLibCheck && tsc -p tsconfig.json --skipLibCheck -d --outDir esm --module es2015 --target es2016",
@@ -51,11 +51,11 @@
     "soap": "^0.38.0"
   },
   "bugs": {
-    "url": "https://github.com/TimLuq/wsdl-to-ts/issues"
+    "url": "https://github.com/noppa/wsdl-to-flow/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/TimLuq/wsdl-to-ts.git"
+    "url": "https://github.com/noppa/wsdl-to-flow.git"
   },
   "engines": {
     "node": ">=8.0.0"
