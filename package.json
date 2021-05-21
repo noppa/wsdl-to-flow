@@ -10,18 +10,16 @@
     "build": "tsc -p tsconfig.json --skipLibCheck && tsc -p tsconfig.json --skipLibCheck -d --outDir esm --module es2015 --target es2016",
     "ci": "npm run build && npm test"
   },
-  "bin": {
-    "wsdl-to-ts": "lib/index.js"
-  },
   "keywords": [
     "soap",
-    "typescript",
     "wsdl",
-    "ts"
+    "flow",
+    "flowtype",
+    "type"
   ],
   "author": {
-    "name": "TimLuq",
-    "url": "https://github.com/TimLuq"
+    "name": "Oskari Noppa",
+    "url": "https://github.com/noppa"
   },
   "license": "ISC",
   "devDependencies": {
