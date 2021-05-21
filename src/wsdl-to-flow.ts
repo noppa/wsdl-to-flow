@@ -300,9 +300,9 @@ export async function wsdl2flow(
         ] = {});
         for (const collectedKey of collectedKeys) {
           ns[collectedKey] =
-            "export interface " +
+            "export type " +
             collectedKey +
-            " " +
+            " = " +
             collector.registered[collectedKey];
         }
       }
@@ -328,14 +328,14 @@ export async function wsdl2flow(
           " soapHeader: {[k: string]: any; }) => any, " +
           "options?: any, " +
           "extraHeaders?: any" +
-          ") => void";
+          "): void";
         r.methods[service][port][method + "Async"] =
           "(input: " +
           method +
           "Input, " +
           "options?: any, " +
           "extraHeaders?: any" +
-          `) => Promise<${method}Output>`;
+          `): Promise<${method}Output>`;
       }
     }
   }
@@ -430,10 +430,10 @@ export function outputTypedWsdl(
       if (a.methods[service] && a.methods[service][port]) {
         const ms: string[] = [];
         for (const method of Object.keys(a.methods[service][port])) {
-          ms.push(method + ": " + a.methods[service][port][method] + ";");
+          ms.push(method + a.methods[service][port][method] + ";");
         }
         if (ms.length) {
-          d.data.push(`export interface ${port} {\n` + ms.join("\n") + "\n}");
+          d.data.push(`export type ${port} = {|\n` + ms.join("\n") + "\n|}");
         }
       }
       if (a.namespaces[service] && a.namespaces[service][port]) {
