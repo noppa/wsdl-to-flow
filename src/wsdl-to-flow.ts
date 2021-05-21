@@ -39,7 +39,7 @@ interface IClientDescription {
 
 export class TypeCollector {
   public readonly registered: { [k: string]: string };
-  public readonly collected: { [k: string]: string };
+  public readonly collected: { [k: string]: null | string };
 
   constructor(public readonly ns: string) {
     this.registered = {};
@@ -48,8 +48,9 @@ export class TypeCollector {
 
   public registerCollected(): this {
     for (const k of Object.keys(this.collected)) {
-      if (this.collected[k]) {
-        this.registered[k] = this.collected[k];
+      const collectedVal = this.collected[k];
+      if (collectedVal) {
+        this.registered[k] = collectedVal;
       } else {
         delete this.registered[k];
       }
@@ -75,16 +76,15 @@ function wsdlTypeToInterfaceObj(
     const isArray = k.endsWith("[]");
     const k2 = isArray ? k.substring(0, k.length - 2) : k;
     const v = obj[k];
-    const t = typeof v;
-    if (t === "string") {
-      const vstr = v as string;
+    if (typeof v === "string") {
+      const vstr = v;
       const [typeName, superTypeClass, typeData] =
         vstr.indexOf("|") === -1 ? [vstr, vstr, undefined] : vstr.split("|");
       const typeFullName =
         obj.targetNamespace && typeof obj.targetNamespace === "string"
           ? obj.targetNamespace + "#" + typeName
           : typeName;
-      let typeClass: string;
+      let typeClass: string = superTypeClass;
       if (isNumberTypeClass(superTypeClass)) {
         typeClass = "number";
       } else if (nsEnums[typeFullName] || typeData) {
@@ -95,8 +95,8 @@ function wsdlTypeToInterfaceObj(
               x !== "pattern" &&
               x !== "maxLength" &&
               x !== "minLength";
-        const tdsplit = typeData.split(",").filter(filter);
-        if (tdsplit.length) {
+        const tdsplit = typeData?.split(",").filter(filter);
+        if (tdsplit?.length) {
           typeClass = '"' + tdsplit.join('" | "') + '"';
         }
       }
@@ -108,9 +108,15 @@ function wsdlTypeToInterfaceObj(
         }
       }
       r[k2] =
-        "/** " + typeFullName + "(" + typeData + ") */ " + typeClass + ";";
+        "/** " +
+        typeFullName +
+        "(" +
+        String(typeData) +
+        ") */ " +
+        typeClass +
+        ";";
     } else {
-      const to = wsdlTypeToInterfaceObj(v as IInterfaceObject, typeCollector);
+      const to = wsdlTypeToInterfaceObj(v, typeCollector);
       let tr: { [k: string]: any } | string;
       if (isArray) {
         let s = wsdlTypeToInterfaceString(to);
@@ -119,7 +125,7 @@ function wsdlTypeToInterfaceObj(
             hasOwnProperty(typeCollector.registered, k2) &&
             typeCollector.registered[k2] === s
           ) {
-            s = typeCollector.ns + ".I" + k2 + ";";
+            s = typeCollector.ns + "$" + k2 + ";";
           } else if (hasOwnProperty(typeCollector.collected, k2)) {
             if (typeCollector.collected[k2] !== s) {
               typeCollector.collected[k2] = null;
@@ -155,7 +161,7 @@ function wsdlTypeToInterfaceObj(
             hasOwnProperty(typeCollector.registered, k2) &&
             typeCollector.registered[k2] === ss
           ) {
-            tr = typeCollector.ns + ".I" + k2 + ";";
+            tr = typeCollector.ns + "$" + k2 + ";";
           } else if (hasOwnProperty(typeCollector.collected, k2)) {
             if (typeCollector.collected[k2] !== ss) {
               typeCollector.collected[k2] = null;
@@ -217,9 +223,9 @@ function wsdlTypeToInterfaceString(d: { [k: string]: any }): string {
     }
   }
   if (r.length === 0) {
-    return "{}";
+    return "{||}";
   }
-  return "{\n    " + r.join("\n    ") + "\n}";
+  return "{|\n    " + r.join("\n    ") + "\n|}";
 }
 
 function wsdlTypeToInterface(
@@ -294,7 +300,7 @@ export async function wsdl2flow(
         ] = {});
         for (const collectedKey of collectedKeys) {
           ns[collectedKey] =
-            "export interface I" +
+            "export interface " +
             collectedKey +
             " " +
             collector.registered[collectedKey];
@@ -302,20 +308,20 @@ export async function wsdl2flow(
       }
 
       for (const method of Object.keys(d[service][port])) {
-        r.types[service][port]["I" + method + "Input"] = wsdlTypeToInterface(
+        r.types[service][port][method + "Input"] = wsdlTypeToInterface(
           d[service][port][method].input || {},
           collector
         );
-        r.types[service][port]["I" + method + "Output"] = wsdlTypeToInterface(
+        r.types[service][port][method + "Output"] = wsdlTypeToInterface(
           d[service][port][method].output || {},
           collector
         );
         r.methods[service][port][method] =
-          "(input: I" +
+          "(input: " +
           method +
           "Input, " +
           "cb: (err: any | null," +
-          " result: I" +
+          " result: " +
           method +
           "Output," +
           " raw: string, " +
@@ -323,6 +329,13 @@ export async function wsdl2flow(
           "options?: any, " +
           "extraHeaders?: any" +
           ") => void";
+        r.methods[service][port][method + "Async"] =
+          "(input: " +
+          method +
+          "Input, " +
+          "options?: any, " +
+          "extraHeaders?: any" +
+          `) => Promise<${method}Output>`;
       }
     }
   }
@@ -335,7 +348,7 @@ function cloneObj<T extends { [k: string]: any }>(a: T): T {
   for (const k of Object.keys(a)) {
     const val: unknown = a[k];
     const newVal: any =
-      typeof val === "object"
+      typeof val === "object" && val !== null
         ? Array.isArray(val)
           ? val.slice()
           : cloneObj(val)
@@ -411,9 +424,7 @@ export function outputTypedWsdl(
       };
       if (a.types[service] && a.types[service][port]) {
         for (const type of Object.keys(a.types[service][port])) {
-          d.data.push(
-            "export interface " + type + " " + a.types[service][port][type]
-          );
+          d.data.push(`export type ${type} = ` + a.types[service][port][type]);
         }
       }
       if (a.methods[service] && a.methods[service][port]) {
@@ -422,13 +433,7 @@ export function outputTypedWsdl(
           ms.push(method + ": " + a.methods[service][port][method] + ";");
         }
         if (ms.length) {
-          d.data.push(
-            "export interface I" +
-              port +
-              "Soap {\n    " +
-              ms.join("\n    ") +
-              "\n}"
-          );
+          d.data.push(`export interface ${port} {\n` + ms.join("\n") + "\n}");
         }
       }
       if (a.namespaces[service] && a.namespaces[service][port]) {
@@ -455,4 +460,29 @@ export function outputTypedWsdl(
     }
   }
   return r;
+}
+
+interface IDefinitionFileContentsOutput {
+  fileContents: string;
+}
+
+interface ICreateDefinitionFileContentsOptions {
+  getModuleName?: (fileName: string) => string;
+}
+
+export function createDefinitionFileContents(
+  wsdl: ITypedWsdl,
+  options?: ICreateDefinitionFileContentsOptions
+): IDefinitionFileContentsOutput {
+  const outputs = outputTypedWsdl(mergeTypedWsdl(wsdl));
+  let combinedOutput = outputs
+    .map(({ file, data }) => {
+      const moduleName = options?.getModuleName?.(file) ?? "wsdl-types/" + file;
+      const moduleDecl = "declare module " + JSON.stringify(moduleName) + " {";
+      return [moduleDecl, ...data, "}"].join("\n");
+    })
+    .join("\n\n")
+    .replace(/(export (?:type|interface|class))/g, "declare $1");
+  combinedOutput = "// @flow\n/* eslint-disable */\n" + combinedOutput;
+  return { fileContents: format(combinedOutput, { parser: "babel-flow" }) };
 }
